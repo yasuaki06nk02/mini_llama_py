@@ -5,7 +5,6 @@ class Tokenizer:
     def __init__(self, reader):
         self.reader = reader
         self.chat_template = None
-        # Qwen GGUF models often store tokenizer behavior in metadata instead of tokenizer.model.
         self.add_bos = bool(reader.metadata.get("tokenizer.ggml.add_bos_token", True))
         self.add_eos = bool(reader.metadata.get("tokenizer.ggml.add_eos_token", False))
 
@@ -40,7 +39,7 @@ class Tokenizer:
         self.mode = "sentencepiece"
 
     def _init_ggml(self, reader):
-        # Build a byte-level BPE tokenizer from GGUF metadata.
+        # Build a tokenizer from GGUF metadata.
         self.tokens = [str(x) for x in reader.metadata["tokenizer.ggml.tokens"]]
         self.merges = [str(x) for x in reader.metadata.get("tokenizer.ggml.merges", [])]
         self.token_to_id = {token: idx for idx, token in enumerate(self.tokens)}
@@ -56,6 +55,10 @@ class Tokenizer:
         self.eos_id = self._meta_int(reader, "tokenizer.ggml.eos_token_id", -1)
         self.unknown_id = self._meta_int(reader, "tokenizer.ggml.unknown_token_id", -1)
         self.stop_ids = {x for x in [self.bos_id, self.eos_id] if x >= 0}
+        for special in ("<|im_end|>", "<|im_start|>", "</s>"):
+            token_id = self.token_to_id.get(special)
+            if token_id is not None:
+                self.stop_ids.add(token_id)
         template = reader.metadata.get("tokenizer.chat_template")
         self.chat_template = str(template) if template is not None else None
         self.mode = "ggml"
@@ -157,7 +160,7 @@ class Tokenizer:
         return byte_values.decode("utf-8", errors="replace")
 
     def format_chat(self, prompt, system=None):
-        # Wrap the raw prompt in Qwen-style ChatML so the model sees the expected format.
+        # Keep the chat format aligned with Qwen-style ChatML.
         system_text = system or "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
         return (
             f"<|im_start|>system\n{system_text}<|im_end|>\n"

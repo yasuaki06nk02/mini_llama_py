@@ -57,7 +57,7 @@ pip install -r requirements.txt
 ```
 
 `sentencepiece` は SentencePiece tokenizer を使うモデル向けに必要です。
-Qwen 系のように `tokenizer.ggml.tokens` を持つ GGUF では、メタデータから tokenizer を構築します。
+Qwen2.5 のように `tokenizer.ggml.tokens` を持つ GGUF では、メタデータから tokenizer を構築します。
 
 ## How To Run
 
@@ -67,13 +67,13 @@ Qwen 系のように `tokenizer.ggml.tokens` を持つ GGUF では、メタデ�
 python main.py model.gguf "The highest mountain in Japan is"
 ```
 
-Qwen 系の instruct モデルを試す例:
+Qwen2.5 の instruct モデルを試す例:
 
 ```bash
-python main.py qwen2.5.gguf "日本の首都はどこですか？" --chat --system "You are a helpful assistant."
+python main.py qwen2.5.gguf "日本の首都はどこですか？" --prompt --system "You are a helpful assistant."
 ```
 
-`--chat` は、入力文を Qwen の ChatML 形式に整形してから推論するためのフラグです。
+`--prompt` は、入力文を Qwen の ChatML 形式に整形してから推論するためのフラグです。
 `--system` はその会話の前提となる system message を指定します。
 
 デフォルトでは greedy decoding です。つまり、毎回もっとも確率が高い token を選びます。
@@ -98,7 +98,7 @@ GGUF 内の量子化 tensor を NumPy 配列に変換します。
 
 入力テキストを token ID に変換し、token ID を文字列に戻します。
 
-Qwen 系では `tokenizer.ggml.tokens` と `tokenizer.ggml.merges` を使うので、`tokenizer.model` が無い GGUF でも動きます。
+Qwen2.5 では `tokenizer.ggml.tokens` と `tokenizer.ggml.merges` を使うので、`tokenizer.model` が無い GGUF でも動きます。
 
 ### `mini_llama/layers.py`
 
@@ -143,7 +143,7 @@ prefill と decode を分けて、実際の生成ループを回します。
 ### 3. Text becomes token IDs
 
 `tokenizer.py` が prompt を token ID の列に変換します。
-Qwen 系では GGUF 内の metadata を使って tokenizer を再構築します。
+Qwen2.5 では GGUF 内の metadata を使って tokenizer を再構築します。
 
 ### 4. Prefill runs first
 
@@ -180,9 +180,9 @@ prompt 全体を 1 token ずつ model に通します。
 10. `mini_llama/generate.py`
 11. `main.py`
 
-## Notes For Qwen Models
+## Notes For Qwen2.5 Models
 
-Qwen 系の GGUF では、`tokenizer.model` が存在しないことがあります。
+Qwen2.5 の GGUF では、`tokenizer.model` が存在しないことがあります。
 その場合は以下の metadata を使います。
 
 - `tokenizer.ggml.tokens`
@@ -191,7 +191,7 @@ Qwen 系の GGUF では、`tokenizer.model` が存在しないことがありま
 - `tokenizer.ggml.pre`
 - `tokenizer.chat_template`
 
-また、Qwen の instruct モデルは独自の会話形式を前提に学習されているため、`--chat` を使って ChatML 風の prompt に整形するのが自然です。
+また、Qwen2.5 の instruct モデルは独自の会話形式を前提に学習されているため、`--prompt` を使って ChatML 風の prompt に整形するのが自然です。
 
 ## Notes For Beginners
 
@@ -223,4 +223,3 @@ Qwen 系の GGUF では、`tokenizer.model` が存在しないことがありま
 - 応答が途中で止まる場合は、stop token の扱いを見ます
 - 数値警告が出る場合は、`layers.py` や `attention.py` の安定性を見ます
 - モデルが読めない場合は、GGUF の architecture 名と tensor 名を確認します
-

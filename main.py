@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--max-new-tokens", type=int, default=32)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-k", type=int, default=40)
-    parser.add_argument("--chat", action="store_true")
+    parser.add_argument("--prompt", dest="chat_prompt", action="store_true")
     parser.add_argument("--system", default=None)
     args = parser.parse_args()
 
@@ -33,7 +33,7 @@ def main():
         max_new_tokens=args.max_new_tokens,
         temperature=args.temperature,
         top_k=args.top_k,
-        chat=args.chat,
+        chat=args.chat_prompt,
         system=args.system,
     )
 
