@@ -23,24 +23,31 @@ class LlamaModel:
             )
 
         self.n_layers = int(meta[f"{self.prefix}.block_count"])
-        self.n_heads = int(meta[f"{self.prefix}.attention.head_count"])
-        self.n_kv_heads = int(
-            meta.get(f"{self.prefix}.attention.head_count_kv", self.n_heads)
-        )
         self.embedding_dim = int(meta[f"{self.prefix}.embedding_length"])
-        self.head_dim = self.embedding_dim // self.n_heads
+        self.n_heads = int(meta[f"{self.prefix}.attention.head_count"])
+        self.n_kv_heads = int(meta.get(f"{self.prefix}.attention.head_count_kv", self.n_heads))
+        self.head_dim = int(meta.get(f"{self.prefix}.attention.key_length", self.embedding_dim // self.n_heads))
         self.ffn_dim = int(meta[f"{self.prefix}.feed_forward_length"])
         self.rope_theta = float(meta.get(f"{self.prefix}.rope.freq_base", 10000.0))
-        self.rms_eps = float(
-            meta.get(f"{self.prefix}.attention.layer_norm_rms_epsilon", 1e-5)
-        )
+        self.rms_eps = float(meta.get(f"{self.prefix}.attention.layer_norm_rms_epsilon", 1e-5))
+
+        if self.prefix == "qwen3":
+            #self.rope_mode = "interleaved"
+            self.rope_mode = "split"
+        else:
+            self.rope_mode = "split"
+        print(f"Using RoPE mode: {self.rope_mode}")
 
         # One KV cache per transformer layer.
         self.cache = [KVCache() for _ in range(self.n_layers)]
 
         self.emb = self._tensor("token_embd.weight")
         self.norm = self._tensor("output_norm.weight")
-        self.output = self._tensor("output.weight")
+        # Some Qwen models use tied input/output embeddings.
+        if "output.weight" in reader.tensors:
+            self.output = self._tensor("output.weight")
+        else:
+            self.output = self.emb
 
         # Collect all tensors needed for each transformer block.
         self.layers = []
@@ -59,7 +66,15 @@ class LlamaModel:
                 "gate": self._tensor(p + "ffn_gate.weight"),
                 "up": self._tensor(p + "ffn_up.weight"),
                 "down": self._tensor(p + "ffn_down.weight"),
+                # Qwen3
+                "q_norm": self._optional_tensor(p + "attn_q_norm.weight"),
+                "k_norm": self._optional_tensor(p + "attn_k_norm.weight"),
             })
+
+            if i == 0:
+                print("q_norm:", "blk.0.attn_q_norm.weight" in reader.tensors)
+                print("k_norm:", "blk.0.attn_k_norm.weight" in reader.tensors)
+
 
     @staticmethod
     def _resolve_prefix(arch, meta):
@@ -119,7 +134,24 @@ class LlamaModel:
                 self.n_kv_heads,
                 self.head_dim,
                 self.rope_theta,
+                self.rope_mode,
+                layer["q_norm"],
+                layer["k_norm"],
+                self.rms_eps,
             )
+
+
+            if i == 0:
+                print(f"Layer {i}:")
+                print("Q shape:", layer["wq"].shape)
+                print("K shape:", layer["wk"].shape)
+                print("V shape:", layer["wv"].shape)
+
+                print("Q norm shape:", None if layer["q_norm"] is None else layer["q_norm"].shape)
+                print("K norm shape:", None if layer["k_norm"] is None else layer["k_norm"].shape)
+
+                print("RMS epsilon:", self.rms_eps)
+                print("RoPE theta:", self.rope_theta)
 
             x = x + a
 

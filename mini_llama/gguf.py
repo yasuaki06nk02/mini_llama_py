@@ -134,7 +134,7 @@ class GGUFReader:
         return info
 
     def tensor_bytes(self, info, nbytes):
-        self.f.seek(self.data_offset + info.offset)
+        #self.f.seek(self.data_offset + info.offset)
         data = self.f.read(nbytes)
         if len(data) != nbytes:
             raise EOFError(f"short tensor data: {info.name}")

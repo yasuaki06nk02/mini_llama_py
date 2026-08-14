@@ -1,3 +1,4 @@
+import numpy as np
 from .sampler import sample
 
 
@@ -14,9 +15,12 @@ def generate(
     if chat:
         # Turn the plain prompt into the chat format expected by instruction-tuned models.
         prompt = tokenizer.format_chat(prompt, system=system)
+        print("formatted prompt:")
+        print(repr(prompt))
 
     # Convert the prompt into token IDs once, then reuse the KV cache during decoding.
     tokens = tokenizer.encode(prompt, add_bos=True)
+    print("tokens:", tokens)
 
     # Start with a clean cache for each new request.
     model.reset_cache()
@@ -31,6 +35,22 @@ def generate(
     for position, token in enumerate(tokens):
         # Prefill: run the full prompt through the model to populate the cache.
         logits = model.forward(token, position)
+
+        # debug: print the logits for the first token of the prompt.
+        if position == len(tokens) - 1:
+            print(
+                "PREFILL FINAL:",
+                "position=", position,
+                "token=", token,
+                "logits:",
+                "min=", float(np.min(logits)),
+                "max=", float(np.max(logits)),
+                "mean=", float(np.mean(logits)),
+                "std=", float(np.std(logits)),
+         )
+
+        top = np.argsort(logits)[-10:][::-1]
+        print("PREFILL FINAL TOP:", top)
 
     generated = []
 

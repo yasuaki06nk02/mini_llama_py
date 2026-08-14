@@ -37,6 +37,9 @@ def main():
         system=args.system,
     )
 
+    #for k, v in reader.metadata.items():
+    #    print(k, "=", v)
+
     print(text)
 
     reader.close()

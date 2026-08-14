@@ -33,15 +33,33 @@ def attention(
     n_kv_heads,
     head_dim,
     rope_theta,
+    rope_mode="split",
+    q_norm=None,
+    k_norm=None,
+    rms_eps=1e-6,
 ):
+    
+    #print("RoPE theta:",rope_theta)
+
     # Project the current hidden state into Q, K, and V vectors.
     q = linear(x, wq, bq).reshape(n_heads, head_dim)
     k = linear(x, wk, bk).reshape(n_kv_heads, head_dim)
     v = linear(x, wv, bv).reshape(n_kv_heads, head_dim)
 
+    # Qwen3 applies RMSNorm to Q and K before RoPE.
+    if q_norm is not None:
+        #print("Q RMSNorm: ON")
+        q = rms_norm(q, q_norm,rms_eps)
+
+
+    if k_norm is not None:
+        #print("K RMSNorm: ON")
+        k = rms_norm(k, k_norm,rms_eps)
+
+
     # Apply RoPE before caching so future tokens can attend to these positions.
-    q = apply_rope(q, position, rope_theta)
-    k = apply_rope(k, position, rope_theta)
+    q = apply_rope(q, position, rope_theta, rope_mode,)
+    k = apply_rope(k, position, rope_theta, rope_mode,)
 
     # Append the current token to the KV cache and fetch the full history.
     cache.append(k, v)

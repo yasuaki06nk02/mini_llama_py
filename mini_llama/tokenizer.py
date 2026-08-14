@@ -1,5 +1,5 @@
 import re
-
+from mini_llama.render_template import render_template
 
 class Tokenizer:
     def __init__(self, reader):
@@ -160,10 +160,25 @@ class Tokenizer:
         return byte_values.decode("utf-8", errors="replace")
 
     def format_chat(self, prompt, system=None):
-        # Keep the chat format aligned with Qwen-style ChatML.
-        system_text = system or "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
-        return (
-            f"<|im_start|>system\n{system_text}<|im_end|>\n"
-            f"<|im_start|>user\n{prompt}<|im_end|>\n"
-            f"<|im_start|>assistant\n"
+        if not self.chat_template:
+            raise ValueError(
+                "GGUF does not contain tokenizer.chat_template"
+            )
+
+        system_text = system or (
+            "You are Qwen, created by Alibaba Cloud. "
+            "You are a helpful assistant."
         )
+
+        messages = [
+            {
+                "role": "system",
+                "content": system_text,
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ]
+
+        return render_template( self.chat_template, messages,)
