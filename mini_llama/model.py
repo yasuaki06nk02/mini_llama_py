@@ -71,9 +71,9 @@ class LlamaModel:
                 "k_norm": self._optional_tensor(p + "attn_k_norm.weight"),
             })
 
-            if i == 0:
-                print("q_norm:", "blk.0.attn_q_norm.weight" in reader.tensors)
-                print("k_norm:", "blk.0.attn_k_norm.weight" in reader.tensors)
+            #if i == 0:
+            #    print("q_norm:", "blk.0.attn_q_norm.weight" in reader.tensors)
+            #    print("k_norm:", "blk.0.attn_k_norm.weight" in reader.tensors)
 
 
     @staticmethod
@@ -141,17 +141,17 @@ class LlamaModel:
             )
 
 
-            if i == 0:
-                print(f"Layer {i}:")
-                print("Q shape:", layer["wq"].shape)
-                print("K shape:", layer["wk"].shape)
-                print("V shape:", layer["wv"].shape)
+            #if i == 0:
+            #    print(f"Layer {i}:")
+            #    print("Q shape:", layer["wq"].shape)
+            #    print("K shape:", layer["wk"].shape)
+            #    print("V shape:", layer["wv"].shape)
 
-                print("Q norm shape:", None if layer["q_norm"] is None else layer["q_norm"].shape)
-                print("K norm shape:", None if layer["k_norm"] is None else layer["k_norm"].shape)
+            #    print("Q norm shape:", None if layer["q_norm"] is None else layer["q_norm"].shape)
+            #    print("K norm shape:", None if layer["k_norm"] is None else layer["k_norm"].shape)
 
-                print("RMS epsilon:", self.rms_eps)
-                print("RoPE theta:", self.rope_theta)
+            #    print("RMS epsilon:", self.rms_eps)
+            #    print("RoPE theta:", self.rope_theta)
 
             x = x + a
 

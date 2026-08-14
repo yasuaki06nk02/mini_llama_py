@@ -15,12 +15,13 @@ def generate(
     if chat:
         # Turn the plain prompt into the chat format expected by instruction-tuned models.
         prompt = tokenizer.format_chat(prompt, system=system)
-        print("formatted prompt:")
+        print("===== CHAT PROMPT =====")
         print(repr(prompt))
+        print("======================")
 
     # Convert the prompt into token IDs once, then reuse the KV cache during decoding.
     tokens = tokenizer.encode(prompt, add_bos=True)
-    print("tokens:", tokens)
+    #print("tokens:", tokens)
 
     # Start with a clean cache for each new request.
     model.reset_cache()
@@ -38,19 +39,29 @@ def generate(
 
         # debug: print the logits for the first token of the prompt.
         if position == len(tokens) - 1:
-            print(
-                "PREFILL FINAL:",
-                "position=", position,
-                "token=", token,
-                "logits:",
-                "min=", float(np.min(logits)),
-                "max=", float(np.max(logits)),
-                "mean=", float(np.mean(logits)),
-                "std=", float(np.std(logits)),
-         )
+        #    print(
+        #        "PREFILL FINAL:",
+        #        "position=", position,
+        #        "token=", token,
+        #        "logits:",
+        #        "min=", float(np.min(logits)),
+        #        "max=", float(np.max(logits)),
+        #        "mean=", float(np.mean(logits)),
+        #        "std=", float(np.std(logits)),
+        # )
 
-        top = np.argsort(logits)[-10:][::-1]
-        print("PREFILL FINAL TOP:", top)
+            top = np.argsort(logits)[-20:][::-1]
+            print("PREFILL FINAL TOP:", top)
+            print("===== FIRST GENERATION LOGITS =====")
+            for rank, token_id in enumerate(top):
+                token_text = tokenizer.decode([int(token_id)])
+                print(
+                    rank,
+                    "id=", int(token_id),
+                    "logit=", float(logits[token_id]),
+                    "token=", repr(token_text),
+                )
+            print("===================================")
 
     generated = []
 
@@ -78,8 +89,7 @@ def generate(
 
     # Convert token IDs back to text and remove any trailing special markers.
     text = tokenizer.decode(generated)
-    for stop in ("<|im_end|>", "<|endoftext|>"):
-        idx = text.find(stop)
-        if idx != -1:
-            text = text[:idx]
+    print("RAW GENERATED:")
+    print(repr(text))
+
     return text.strip()

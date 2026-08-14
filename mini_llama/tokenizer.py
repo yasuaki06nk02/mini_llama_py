@@ -43,6 +43,17 @@ class Tokenizer:
         self.tokens = [str(x) for x in reader.metadata["tokenizer.ggml.tokens"]]
         self.merges = [str(x) for x in reader.metadata.get("tokenizer.ggml.merges", [])]
         self.token_to_id = {token: idx for idx, token in enumerate(self.tokens)}
+
+        self.special_tokens = {}
+        for token in (
+            "<|im_start|>",
+            "<|im_end|>",
+            "<|endoftext|>",
+        ):
+            token_id = self.token_to_id.get(token)
+            if token_id is not None:
+                self.special_tokens[token] = token_id
+        
         self.merge_ranks = {}
         for rank, merge in enumerate(self.merges):
             left, right = merge.split(" ", 1)
@@ -130,21 +141,55 @@ class Tokenizer:
         return [self.token_to_id[p] for p in self._bpe(encoded) if p in self.token_to_id]
 
     def encode(self, text, add_bos=True):
-        # Convert input text into token IDs before the model sees it.
+        # SentencePiece models use the native SentencePiece tokenizer.
         if self.mode == "sentencepiece":
             ids = list(self.sp.EncodeAsIds(text))
             if add_bos and self.bos_id >= 0:
                 ids.insert(0, self.bos_id)
             return ids
 
-        pieces = re.findall(r"\s+|\S+", text)
         ids = []
-        for piece in pieces:
-            ids.extend(self._encode_piece(piece))
+
+        # Split special tokens first so that Qwen3 chat markers remain
+        # atomic tokens instead of being passed through normal BPE.
+        if self.special_tokens:
+            special_pattern = "|".join(
+                re.escape(token)
+                for token in sorted(
+                    self.special_tokens,
+                    key=len,
+                    reverse=True,
+                )
+            )
+
+            parts = re.split(
+                f"({special_pattern})",
+                text,
+            )
+        else:
+            parts = [text]
+
+        for part in parts:
+            if not part:
+                continue
+
+            # Special token: keep it as one token.
+            if part in self.special_tokens:
+                ids.append(self.special_tokens[part])
+                continue
+
+            # Normal text.
+            pieces = re.findall(r"\s+|\S+", part)
+        
+            for piece in pieces:
+                ids.extend(self._encode_piece(piece))
+
         if add_bos and self.add_bos and self.bos_id >= 0:
             ids.insert(0, self.bos_id)
+
         if self.add_eos and self.eos_id >= 0:
             ids.append(self.eos_id)
+
         return ids
 
     def decode(self, ids):
