@@ -1,5 +1,6 @@
 import numpy as np
 from .sampler import sample
+from .clean_generated_text import clean_generated_text
 
 
 def generate(
@@ -15,9 +16,9 @@ def generate(
     if chat:
         # Turn the plain prompt into the chat format expected by instruction-tuned models.
         prompt = tokenizer.format_chat(prompt, system=system)
-        print("===== CHAT PROMPT =====")
-        print(repr(prompt))
-        print("======================")
+        #print("===== CHAT PROMPT =====")
+        #print(repr(prompt))
+        #print("======================")
 
     # Convert the prompt into token IDs once, then reuse the KV cache during decoding.
     tokens = tokenizer.encode(prompt, add_bos=True)
@@ -51,17 +52,17 @@ def generate(
         # )
 
             top = np.argsort(logits)[-20:][::-1]
-            print("PREFILL FINAL TOP:", top)
-            print("===== FIRST GENERATION LOGITS =====")
-            for rank, token_id in enumerate(top):
-                token_text = tokenizer.decode([int(token_id)])
-                print(
-                    rank,
-                    "id=", int(token_id),
-                    "logit=", float(logits[token_id]),
-                    "token=", repr(token_text),
-                )
-            print("===================================")
+            #print("PREFILL FINAL TOP:", top)
+            #print("===== FIRST GENERATION LOGITS =====")
+            #for rank, token_id in enumerate(top):
+            #    token_text = tokenizer.decode([int(token_id)])
+            #    print(
+            #        rank,
+            #        "id=", int(token_id),
+            #        "logit=", float(logits[token_id]),
+            #        "token=", repr(token_text),
+            #    )
+            #print("===================================")
 
     generated = []
 
@@ -89,7 +90,8 @@ def generate(
 
     # Convert token IDs back to text and remove any trailing special markers.
     text = tokenizer.decode(generated)
-    print("RAW GENERATED:")
-    print(repr(text))
+    #print("RAW GENERATED:")
+    #print(repr(text))
 
-    return text.strip()
+    #return text.strip()
+    return clean_generated_text(text)

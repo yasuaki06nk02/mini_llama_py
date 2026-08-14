@@ -1,9 +1,9 @@
 #
 .git/
-__pycache__/
+#__pycache__/
 
-__pycache__/
-*.pyc
+#__pycache__/
+#*.pyc
 
 *.log
 *.gguf
