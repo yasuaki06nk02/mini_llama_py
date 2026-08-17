@@ -204,11 +204,18 @@ class Tokenizer:
                 byte_values.append(self.byte_decoder[ch])
         return byte_values.decode("utf-8", errors="replace")
 
-    def format_chat(self, prompt, system=None):
+    def format_chat_messages(self, messages):
         if not self.chat_template:
             raise ValueError(
                 "GGUF does not contain tokenizer.chat_template"
             )
+
+        return render_template(
+            self.chat_template,
+            messages,
+        )
+    
+    def format_chat(self, prompt, system=None):
 
         system_text = system or (
             "You are Qwen, created by Alibaba Cloud. "
@@ -226,4 +233,5 @@ class Tokenizer:
             },
         ]
 
-        return render_template( self.chat_template, messages,)
+        #return render_template( self.chat_template, messages,)
+        return self.format_chat_messages(messages)
