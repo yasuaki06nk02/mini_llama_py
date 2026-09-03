@@ -52,17 +52,17 @@ def generate(
         # )
 
             top = np.argsort(logits)[-20:][::-1]
-            #print("PREFILL FINAL TOP:", top)
-            #print("===== FIRST GENERATION LOGITS =====")
-            #for rank, token_id in enumerate(top):
-            #    token_text = tokenizer.decode([int(token_id)])
-            #    print(
-            #        rank,
-            #        "id=", int(token_id),
-            #        "logit=", float(logits[token_id]),
-            #        "token=", repr(token_text),
-            #    )
-            #print("===================================")
+            print("PREFILL FINAL TOP:", top)
+            print("===== FIRST GENERATION LOGITS =====")
+            for rank, token_id in enumerate(top):
+                token_text = tokenizer.decode([int(token_id)])
+                print(
+                    rank,
+                    "id=", int(token_id),
+                    "logit=", float(logits[token_id]),
+                    "token=", repr(token_text),
+                )
+            print("===================================")
 
     generated = []
 
